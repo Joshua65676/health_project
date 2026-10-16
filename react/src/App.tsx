@@ -1,11 +1,15 @@
 import './App.css'
+import { Routes, Route } from 'react-router-dom'
+import Login from './components/pages/Login'
+import SignUp from './components/pages/SignUp'
 
 function App() {
  
   return (
-    <>
-      <h1>Wellcome Josh</h1>
-    </>
+    <Routes>
+      <Route path='/login' element={<Login />} />
+      <Route path='/signup' element={<SignUp />} />
+    </Routes>
   )
 }
 
