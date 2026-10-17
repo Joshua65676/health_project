@@ -1,11 +1,44 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import NavBar from "../NavBar";
-import { GoogleIcon, Lock, Logo, Mail, Eye, HeartIcon, EyeClose } from "../../assets";
+import {
+  GoogleIcon,
+  Lock,
+  Logo,
+  Mail,
+  Eye,
+  HeartIcon,
+  EyeClose,
+} from "../../assets";
 import { Link } from "react-router-dom";
+import { authCallbackUrl, googleAuthUrl, signIn } from "../../auth";
 
 const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [feedback, setFeedback] = useState("");
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setFeedback("");
+
+    try {
+      await signIn(email, password, remember);
+      window.location.assign(authCallbackUrl);
+    } catch (error) {
+      setFeedback(
+        error instanceof Error
+          ? error.message
+          : "Login failed. Please try again.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <section className="flex flex-col gap-8 bg-linear-to-b from-[#cfdee3] to-[#fafafa]">
@@ -30,8 +63,8 @@ const Login: React.FC = () => {
             </p>
           </div>
           {/* Forms */}
-          <div className="flex flex-col gap-2">
-            <form className="flex flex-col gap-1 w-86.25">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1 w-86.25">
               <label className="font-Inter font-[400px] text-[14px] leading-7.5 tracking-normal text-start text-Black">
                 Email Address
               </label>
@@ -39,6 +72,9 @@ const Login: React.FC = () => {
                 <input
                   type="email"
                   required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
                   placeholder="Enter your email..."
                   className="w-86.25 h-12 rounded-[10px] border py-3.25 pl-12 pr-5.75 border-FormBg font-Inter font-medium text-[14px] leading-7.5 tracking-normal text-black"
                 />
@@ -48,9 +84,9 @@ const Login: React.FC = () => {
                   className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2"
                 />
               </div>
-            </form>
+            </div>
 
-            <form className="flex flex-col gap-1 w-86.25">
+            <div className="flex flex-col gap-1 w-86.25">
               <label className="font-Inter font-[400px] text-[14px] leading-7.5 tracking-normal text-start text-Black">
                 Password
               </label>
@@ -63,6 +99,9 @@ const Login: React.FC = () => {
                 <input
                   type={showPassword ? "text" : "password"}
                   required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
                   placeholder="Enter your password"
                   className="w-86.25 h-12 rounded-[10px] border py-3.25 pl-12 pr-12 border-FormBg font-Inter font-medium text-[14px] leading-7.5 tracking-normal text-black"
                 />
@@ -73,7 +112,11 @@ const Login: React.FC = () => {
                   aria-pressed={showPassword}
                   className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer"
                 >
-                  {showPassword ? <img src={EyeClose} alt="" /> : <img src={Eye} alt="" />}
+                  {showPassword ? (
+                    <img src={EyeClose} alt="" />
+                  ) : (
+                    <img src={Eye} alt="" />
+                  )}
                 </button>
               </div>
               <div className="flex items-center justify-between">
@@ -81,6 +124,8 @@ const Login: React.FC = () => {
                   <input
                     type="checkbox"
                     id="rememberMe"
+                    checked={remember}
+                    onChange={(event) => setRemember(event.target.checked)}
                     className="h-4 w-4 cursor-pointer accent-TextColor"
                   />
                   <label
@@ -94,17 +139,24 @@ const Login: React.FC = () => {
                   Forgot Password?
                 </span>
               </div>
-            </form>
+            </div>
 
             <motion.button
+              type="submit"
+              disabled={busy}
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
               transition={{ duration: 0.16 }}
-              className="bg-TextColor cursor-pointer rounded-[10px] h-10 w-86.25 px-5.75 font-Inter font-medium text-[14px] leading-7.5 text-center text-white hover:bg-opacity-90 transition duration-300"
+              className="bg-TextColor cursor-pointer rounded-[10px] h-10 w-86.25 px-5.75 font-Inter font-medium text-[14px] leading-7.5 text-center text-white hover:bg-opacity-90 transition duration-300 disabled:cursor-wait disabled:opacity-60"
             >
-              Login to MediAI
+              {busy ? "Signing in..." : "Login to MediAI"}
             </motion.button>
-          </div>
+            {feedback && (
+              <p role="alert" className="w-86.25 text-sm text-red-700">
+                {feedback}
+              </p>
+            )}
+          </form>
           {/* Contiune */}
           <div className="flex flex-col gap-2">
             <div className="flex flex-row w-86.25 items-center justify-between">
@@ -116,6 +168,8 @@ const Login: React.FC = () => {
             </div>
 
             <motion.button
+              type="button"
+              onClick={() => window.location.assign(googleAuthUrl)}
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
               transition={{ duration: 0.16 }}

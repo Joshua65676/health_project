@@ -1,3 +1,4 @@
 .env
+.env.example
 hf_debug.log
 test.php
