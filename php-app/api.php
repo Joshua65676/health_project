@@ -1,7 +1,27 @@
 <?php
 header('Content-Type: application/json');
 
-function loadEnv($path) {
+$frontendOrigin = rtrim(getenv('FRONTEND_ORIGIN') ?: 'http://localhost:5174', '/');
+$requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if ($requestOrigin !== '' && hash_equals($frontendOrigin, $requestOrigin)) {
+    header('Access-Control-Allow-Origin: ' . $frontendOrigin);
+    header('Access-Control-Allow-Credentials: true');
+    header('Access-Control-Allow-Headers: Content-Type');
+    header('Access-Control-Allow-Methods: POST, OPTIONS');
+    header('Vary: Origin');
+}
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
+    http_response_code($requestOrigin === '' || hash_equals($frontendOrigin, $requestOrigin) ? 204 : 403);
+    exit;
+}
+if ($requestOrigin !== '' && !hash_equals($frontendOrigin, $requestOrigin)) {
+    http_response_code(403);
+    echo json_encode(['error' => 'This origin is not allowed.']);
+    exit;
+}
+
+function loadEnv($path)
+{
     if (!file_exists($path)) return;
 
     $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -24,6 +44,12 @@ $hfToken = getenv('HF_API_KEY');
 $url     = "https://router.huggingface.co/v1/chat/completions";
 
 $userMessage = trim($_POST['message'] ?? '');
+$history = json_decode($_POST['history'] ?? '[]', true);
+$history = is_array($history) ? array_slice($history, -20) : [];
+$responseStyle = $_POST['responseStyle'] ?? 'balanced';
+if (!in_array($responseStyle, ['concise', 'balanced', 'detailed'], true)) {
+    $responseStyle = 'balanced';
+}
 $hasFile     = isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK;
 
 if (empty($userMessage) && !$hasFile) {
@@ -164,6 +190,13 @@ if ($isHealth) {
     - Do not give medical advice.";
 }
 
+$styleInstructions = [
+    'concise' => 'Keep the reply brief and focused. Use only the essential explanation and next steps.',
+    'balanced' => 'Give a clear answer with enough context and practical next steps, without unnecessary length.',
+    'detailed' => 'Give a thorough, well-organized explanation with useful context and practical next steps.',
+];
+$systemPrompt .= "\n\nRESPONSE LENGTH: " . $styleInstructions[$responseStyle];
+
 // ── Build messages array ───────────────────────────────────
 $userContent = [];
 
@@ -190,11 +223,22 @@ $userContent[] = ["type" => "text", "text" => $textPrompt];
 
 $data = [
     "model"      => "CohereLabs/aya-vision-32b:cohere",
-    "messages"   => [
-        ["role" => "system",  "content" => $systemPrompt],
-        ["role" => "user",    "content" => $userContent]
-    ],
-    "max_tokens" => 600
+    "messages"   => array_merge(
+        [["role" => "system", "content" => $systemPrompt]],
+        array_values(array_filter(
+            $history,
+            static fn($message) =>
+            is_array($message)
+                && in_array($message['role'] ?? null, ['user', 'assistant'], true)
+                && is_string($message['content'] ?? null)
+        )),
+        [["role" => "user", "content" => $userContent]]
+    ),
+    "max_tokens" => match ($responseStyle) {
+        'concise' => 350,
+        'detailed' => 1000,
+        default => 600,
+    }
 ];
 
 // ── API call ───────────────────────────────────────────────
@@ -221,12 +265,12 @@ $decoded = json_decode($response, true);
 
 $raw = $decoded['choices'][0]['message']['content']
     ?? null;
-    if ($raw === null) {
-        echo json_encode([
-            'reply' => 'DEBUG: ' . json_encode($decoded)
-        ]);
-        exit;
-    }
+if ($raw === null) {
+    echo json_encode([
+        'reply' => 'DEBUG: ' . json_encode($decoded)
+    ]);
+    exit;
+}
 
 // =====================
 // POST-PROCESSING

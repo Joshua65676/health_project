@@ -4,6 +4,7 @@ import DashBoardList from "./DashBoardList";
 import History from "./History";
 import Profile from "./Profile";
 import type { DashboardPage } from "./types";
+import type { Conversation } from "./chatTypes";
 
 const MIN_WIDTH = 72;
 const MAX_WIDTH = 500;
@@ -12,18 +13,47 @@ const COLLAPSED_BREAKPOINT = 240;
 type SidebarProps = {
   activePage: DashboardPage;
   onPageChange: (page: DashboardPage) => void;
+  onNewChat: () => void;
+  onSelectConversation: (conversation: Conversation) => void;
+  historyRefreshKey: string | undefined;
+  userName: string;
 };
 
-const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
-  const [width, setWidth] = useState(280);
+const Sidebar: React.FC<SidebarProps> = ({
+  activePage,
+  onPageChange,
+  onNewChat,
+  onSelectConversation,
+  historyRefreshKey,
+  userName,
+}) => {
+  const [width, setWidth] = useState(() =>
+    window.innerWidth < 640 ? MIN_WIDTH : window.innerWidth < 1024 ? 256 : 280,
+  );
   const [resizing, setResizing] = useState(false);
   const isResizing = useRef(false);
   const isCollapsed = width <= COLLAPSED_BREAKPOINT;
 
   const onMouseMove = useCallback((e: MouseEvent) => {
     if (!isResizing.current) return;
-    const newWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, e.clientX));
+    const viewportMax = Math.min(
+      MAX_WIDTH,
+      Math.max(MIN_WIDTH, window.innerWidth - 120),
+    );
+    const newWidth = Math.min(viewportMax, Math.max(MIN_WIDTH, e.clientX));
     setWidth(newWidth);
+  }, []);
+
+  const onWindowResize = useCallback(() => {
+    if (window.innerWidth < 640) {
+      setWidth(MIN_WIDTH);
+      return;
+    }
+    const viewportMax = Math.min(
+      MAX_WIDTH,
+      Math.max(MIN_WIDTH, window.innerWidth - 120),
+    );
+    setWidth((current) => Math.min(current, viewportMax));
   }, []);
 
   const stopResizing = useCallback(() => {
@@ -37,14 +67,16 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
     window.addEventListener("pointermove", onMouseMove);
     window.addEventListener("pointerup", stopResizing);
     window.addEventListener("pointercancel", stopResizing);
+    window.addEventListener("resize", onWindowResize);
     return () => {
       window.removeEventListener("pointermove", onMouseMove);
       window.removeEventListener("pointerup", stopResizing);
       window.removeEventListener("pointercancel", stopResizing);
+      window.removeEventListener("resize", onWindowResize);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
     };
-  }, [onMouseMove, stopResizing]);
+  }, [onMouseMove, onWindowResize, stopResizing]);
 
   const startResizing = (event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -57,9 +89,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
   const resizeWithKeyboard = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
+      const viewportMax = Math.min(
+        MAX_WIDTH,
+        Math.max(MIN_WIDTH, window.innerWidth - 120),
+      );
       setWidth((current) =>
         Math.min(
-          MAX_WIDTH,
+          viewportMax,
           Math.max(
             MIN_WIDTH,
             current + (event.key === "ArrowRight" ? 16 : -16),
@@ -68,12 +104,15 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
       );
     }
     if (event.key === "Home") setWidth(MIN_WIDTH);
-    if (event.key === "End") setWidth(MAX_WIDTH);
+    if (event.key === "End")
+      setWidth(
+        Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, window.innerWidth - 120)),
+      );
   };
 
   return (
     <aside
-      className="relative h-screen shrink-0 overflow-hidden border-r border-FormBg bg-white"
+      className="relative h-dvh shrink-0 overflow-hidden border-r border-FormBg bg-white"
       style={{
         width,
         transition: resizing
@@ -82,15 +121,19 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
       }}
     >
       <div
-        className={`flex h-full flex-col ${isCollapsed ? "items-center gap-6 px-2 py-4" : "items-stretch gap-8 px-4 py-4"}`}
+        className={`flex h-full min-h-0 flex-col overflow-y-auto ${isCollapsed ? "items-center gap-6 px-1 py-4" : "items-stretch gap-8 px-4 py-4"}`}
       >
         <header className="w-full">
           <div
-            className={`flex min-h-10 items-center ${isCollapsed ? "justify-center" : "gap-3"}`}
+            className={`flex min-h-10 items-center ${isCollapsed ? "justify-between" : "gap-2"}`}
           >
-            <img src={Logo} alt="MediAI" className="h-8 w-9 shrink-0" />
+            <img
+              src={Logo}
+              alt="MediAI"
+              className={`shrink-0 ${isCollapsed ? "h-6 w-7" : "h-8 w-9"}`}
+            />
             {!isCollapsed && (
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <h2 className="truncate font-Inter text-[22px] font-semibold leading-7 text-Black">
                   Medi<span className="text-TextColor">AI</span>
                 </h2>
@@ -99,11 +142,29 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
                 </span>
               </div>
             )}
+            <button
+              type="button"
+              onClick={() =>
+                setWidth(
+                  isCollapsed
+                    ? Math.max(
+                        MIN_WIDTH,
+                        Math.min(256, window.innerWidth - 120),
+                      )
+                    : MIN_WIDTH,
+                )
+              }
+              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+              className="grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-lg text-[#52645c] hover:bg-ButtonBg2"
+            >
+              <span aria-hidden="true">{isCollapsed ? "›" : "‹"}</span>
+            </button>
           </div>
 
           <button
             type="button"
-            onClick={() => onPageChange("chat")}
+            onClick={onNewChat}
             title={isCollapsed ? "New Chat" : undefined}
             aria-label="New Chat"
             className={`mt-6 flex h-10 w-full cursor-pointer items-center rounded-lg bg-TextColor text-white transition-colors hover:bg-emerald-800 ${isCollapsed ? "justify-center px-0" : "justify-center gap-2 px-4"}`}
@@ -124,12 +185,15 @@ const Sidebar: React.FC<SidebarProps> = ({ activePage, onPageChange }) => {
           activePage={activePage}
           collapsed={isCollapsed}
           onPageChange={onPageChange}
+          onSelectConversation={onSelectConversation}
+          refreshKey={historyRefreshKey}
         />
         <div className="mt-auto w-full border-t border-BorderColor pt-3">
           <Profile
             activePage={activePage}
             collapsed={isCollapsed}
             onPageChange={onPageChange}
+            userName={userName}
           />
         </div>
       </div>

@@ -4,8 +4,14 @@ export type AuthUser = {
   email: string
 }
 
+export type UserPreferences = {
+  responseStyle: 'concise' | 'balanced' | 'detailed'
+  saveHistory: boolean
+}
+
 type AuthResult = {
   user?: AuthUser
+  preferences?: UserPreferences
   message?: string
   error?: string
 }
@@ -49,6 +55,26 @@ export function signIn(email: string, password: string, remember: boolean): Prom
 
 export function getCurrentUser(): Promise<AuthResult> {
   return requestAuth('me.php', { method: 'GET' })
+}
+
+export function updateProfile(name: string): Promise<AuthResult> {
+  return requestAuth('profile.php', {
+    method: 'POST',
+    body: JSON.stringify({ name }),
+  })
+}
+
+export async function getUserPreferences(): Promise<UserPreferences> {
+  const result = await requestAuth('preferences.php', { method: 'GET' })
+  return result.preferences ?? { responseStyle: 'balanced', saveHistory: true }
+}
+
+export async function saveUserPreferences(preferences: UserPreferences): Promise<UserPreferences> {
+  const result = await requestAuth('preferences.php', {
+    method: 'POST',
+    body: JSON.stringify(preferences),
+  })
+  return result.preferences ?? preferences
 }
 
 export function signOut(): Promise<AuthResult> {
