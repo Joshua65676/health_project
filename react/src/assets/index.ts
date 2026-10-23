@@ -16,6 +16,10 @@ import OutlineIcon from "./outline_more.svg";
 import PlusIcon from "./plus.svg";
 import SettingIcon from "./settings-outline.svg";
 import SunIcon from "./sun.svg";
+import BgImage from "./image.png";
+import Chat from "./Chat.svg";
+import Clock from "./time-line.svg";
+import PrivateIcon from "./privacy-tip-outline.svg"
 
 export {
     Logo,
@@ -36,4 +40,8 @@ export {
     PlusIcon,
     SettingIcon,
     SunIcon,
+    BgImage,
+    Chat,
+    Clock,
+    PrivateIcon
  };

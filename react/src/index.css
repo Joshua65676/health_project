@@ -15,6 +15,8 @@
     --color-ButtonBg2: rgba(207, 222, 227, 0.3);
     --color-SoftGreen: rgba(0, 163, 204, 0.1);
     --color-Green: rgba(7, 210, 14, 1);
+    --color-LightBlack: rgba(43, 43, 43, 1);
+    --shadow-button: 0 8px 10px -6px rgba(1, 102, 139, 0.3), 0 20px 25px -5px rgba(1, 102, 139, 0.3);
     --shadow-soft: '0 2px 20px 0 rgba(0, 0, 0, 0.1)';
     --shadow-medium: '0 2px 30px 0 rgba(0, 0, 0, 0.1)';
     --shadow-hard: '0 2px 40px 0 rgba(0, 0, 0, 0.25)';
