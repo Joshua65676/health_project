@@ -19,7 +19,20 @@ import SunIcon from "./sun.svg";
 import BgImage from "./image.png";
 import Chat from "./Chat.svg";
 import Clock from "./time-line.svg";
-import PrivateIcon from "./privacy-tip-outline.svg"
+import PrivateIcon from "./privacy-tip-outline.svg";
+import Brain from "./brain.svg";
+import ServiceBg from "./ServiceBg.png"
+import Union from "./Union.png"
+import Vector from "./victor.svg";
+import NotePad from "./notepad.svg"
+import Union2 from "./Union2.png"
+import Vector2 from "./vector.svg"
+import Dot from "./Ellipse.svg"
+import Union3 from "./Union3.png"
+import Vector3 from "./Vector2.svg"
+import ShieldPlus from "./shield-plus.svg"
+import ShieldHeart from "./shield-with-heart.svg"
+import Ic from "./ic_round-gpp-good.svg"
 
 export {
     Logo,
@@ -43,5 +56,18 @@ export {
     BgImage,
     Chat,
     Clock,
-    PrivateIcon
+    PrivateIcon,
+    ServiceBg,
+    Union,
+    Vector,
+    Brain,
+    NotePad,
+    Union2,
+    Vector2,
+    Dot,
+    Union3,
+    Vector3,
+    ShieldPlus,
+    ShieldHeart,
+    Ic
  };
