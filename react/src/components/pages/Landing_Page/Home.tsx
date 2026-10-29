@@ -2,6 +2,7 @@ import React from "react";
 import Navbar from "./Navbar";
 import Hero from "./Hero";
 import Service from "./Service";
+import HowItWork from "./HowItWork";
 
 const Home: React.FC = () => {
   return (
@@ -9,6 +10,7 @@ const Home: React.FC = () => {
       <Navbar />
       <Hero />
       <Service />
+      <HowItWork />
     </main>
   );
 };

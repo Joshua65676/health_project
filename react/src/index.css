@@ -19,6 +19,7 @@
     --color-Green: rgba(7, 210, 14, 1);
     --color-LightBlack: rgba(43, 43, 43, 1);
     --color-ServiceListBg: rgba(218, 230, 233, 1);
+    --color-StepsBg: rgba(230, 250, 255, 0.2);
     --shadow-ServiceListBg: 0 10px 10px 0 rgba(218, 230, 233, 1);
     --shadow-ServiceList: 0 10px 10px 0 rgba(0, 0, 0, 0.25);
     --shadow-Bg: 0 4px 4px 0 rgba(0, 0, 0, 0.25);

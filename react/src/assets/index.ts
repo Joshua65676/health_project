@@ -33,6 +33,10 @@ import Vector3 from "./Vector2.svg"
 import ShieldPlus from "./shield-plus.svg"
 import ShieldHeart from "./shield-with-heart.svg"
 import Ic from "./ic_round-gpp-good.svg"
+import NoteLine from "./note-line.svg"
+import Message from "./hugeicons_message.svg"
+import VectorAI from "./Vector_AI.svg"
+import VectorArrow from "./Vector_Right.svg"
 
 export {
     Logo,
@@ -69,5 +73,9 @@ export {
     Vector3,
     ShieldPlus,
     ShieldHeart,
-    Ic
+    Ic,
+    Message,
+    VectorAI,
+    VectorArrow,
+    NoteLine
  };
