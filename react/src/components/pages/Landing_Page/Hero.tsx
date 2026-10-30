@@ -2,6 +2,7 @@ import React from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { BgImage, Chat, Sparkle } from "../../../assets";
 import { HeroList } from "../../../constants";
+import { Link } from "react-router-dom";
 
 const Hero: React.FC = () => {
   const shouldReduceMotion = useReducedMotion();
@@ -12,7 +13,10 @@ const Hero: React.FC = () => {
   });
 
   return (
-    <section className="relative isolate mt-20 min-h-[calc(100svh-5rem)] overflow-hidden bg-[#e9e9e4]">
+    <section
+      id="hero"
+      className="relative isolate mt-20 min-h-[calc(100svh-5rem)] overflow-hidden bg-[#e9e9e4]"
+    >
       {/* Background image */}
       <img
         src={BgImage}
@@ -50,10 +54,12 @@ const Hero: React.FC = () => {
           {...entrance(0.12)}
           className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-start"
         >
-          <button className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-full bg-TextColor px-6 py-4 text-center font-Inter text-base font-semibold leading-6 text-white shadow-button transition-transform hover:-translate-y-0.5 sm:w-57.5 sm:px-8">
-            <img src={Chat} alt="" className="inline-block" />
-            Start Chat Now
-          </button>
+          <Link to="/login">
+            <button className="flex h-14 w-full cursor-pointer items-center justify-center gap-2 whitespace-nowrap rounded-full bg-TextColor px-6 py-4 text-center font-Inter text-base font-semibold leading-6 text-white shadow-button transition-transform hover:-translate-y-0.5 sm:w-57.5 sm:px-8">
+              <img src={Chat} alt="" className="inline-block" />
+              Start Chat Now
+            </button>
+          </Link>
 
           <button className="h-14 w-full whitespace-nowrap rounded-full border-2 border-FormBg px-6 py-4 text-center font-Inter text-base font-semibold leading-6 text-black shadow-button transition-colors hover:bg-white/50 sm:w-57.5 sm:px-8">
             Learn Our Process

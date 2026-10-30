@@ -3,6 +3,8 @@ import Navbar from "./Navbar";
 import Hero from "./Hero";
 import Service from "./Service";
 import HowItWork from "./HowItWork";
+import Review from "./Review";
+import Footer from "./Footer";
 
 const Home: React.FC = () => {
   return (
@@ -11,6 +13,8 @@ const Home: React.FC = () => {
       <Hero />
       <Service />
       <HowItWork />
+      <Review />
+      <Footer />
     </main>
   );
 };

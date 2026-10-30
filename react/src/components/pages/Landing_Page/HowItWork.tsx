@@ -23,7 +23,7 @@ const HowItWork: React.FC = () => {
 
   return (
     <section id="howitworks" className="w-full">
-      <div className="mx-auto flex w-full max-w-7xl flex-col items-center gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
+      <div className="mx-auto container flex w-full max-w-7xl flex-col items-center gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
         <div className="flex w-full max-w-3xl flex-col items-center gap-4 text-center sm:gap-5">
           <h2 className="font-Manrope text-3xl font-semibold leading-tight text-TextBlack sm:text-4xl">
             How It Works

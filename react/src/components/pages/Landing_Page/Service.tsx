@@ -30,7 +30,7 @@ const Service: React.FC = () => {
 
   return (
     <main
-      id="service"
+      id="aboutus"
       className="w-full bg-linear-to-b from-ServiceBg to-ServiceBg2"
     >
       <section className="mx-auto flex w-full max-w-7xl flex-col items-center gap-8 px-4 py-12 sm:px-6 sm:py-16 lg:px-8">

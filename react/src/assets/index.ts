@@ -37,6 +37,18 @@ import NoteLine from "./note-line.svg"
 import Message from "./hugeicons_message.svg"
 import VectorAI from "./Vector_AI.svg"
 import VectorArrow from "./Vector_Right.svg"
+import Rating from "./Rating.svg"
+import CareRight from "./CareRight.svg"
+import CareLeft from "./CareLeft.svg"
+import Quote from "./double-quotes.svg"
+import Cindy from "./Cindy.png"
+import Sarah from "./Sarah.png"
+import Josh from "./Josh.png"
+import Rating1 from "./rating1.svg"
+import FaceBook from "./facebook.svg"
+import Tiwtter from "./twitter.svg"
+import Instagram from "./instagram.svg"
+import VectorSend from "./Vector_send.svg"
 
 export {
     Logo,
@@ -77,5 +89,17 @@ export {
     Message,
     VectorAI,
     VectorArrow,
-    NoteLine
+    NoteLine,
+    Rating,
+    CareLeft,
+    CareRight,
+    Quote,
+    Cindy,
+    Sarah,
+    Josh,
+    Rating1,
+    FaceBook,
+    Tiwtter,
+    Instagram,
+    VectorSend
  };

@@ -1,4 +1,6 @@
-import { ChatIcon, Clock, Lock, Message, NoteLine, PrivateIcon, SettingIcon, VectorAI } from "../assets";
+import { 
+  ChatIcon, Cindy, Clock, Josh, Lock, Message, NoteLine, PrivateIcon, Sarah, SettingIcon, VectorAI 
+} from "../assets";
 
 export const SidebarList = [
     {id: 1, name: "Chat", icon: ChatIcon, link: ""},
@@ -36,5 +38,56 @@ export const STEPS = [
     icon: NoteLine,
     title: "Receive Guidance",
     description: "Get recommendations, next steps and healthy suggestions instantly.",
+  },
+];
+
+export const REVIEWS = [
+  {
+    id: 1,
+    name: "Cindy A.",
+    image: Cindy,
+    text: "MedAI helped me understand my symptoms and gave clear next steps. It's like having a health expert available 24/7.",
+  },
+  {
+    id: 2,
+    name: "Sarah J.",
+    image: Sarah,
+    text: "I love how easy it is to chat and get personalized health advice. It gave me peace of mind when I needed it the most.",
+  },
+  {
+    id: 3,
+    name: "Josh O.",
+    image: Josh,
+    text: "I love how easy it is to chat and get personalized health advice. It gave me peace of mind when I needed it the most.",
+  },
+  // add more reviews here; the dots update automatically
+];
+
+export const FOOTER_COLUMNS = [
+  {
+    title: "Quick Links",
+    links: [
+      { label: "Home", href: "#home" },
+      { label: "About Us", href: "#about" },
+      { label: "How It Works", href: "#how-it-works" },
+      { label: "Reviews", href: "#reviews" },
+    ],
+  },
+  {
+    title: "Support",
+    links: [
+      { label: "Contact Us", href: "#contact" },
+      { label: "Privacy Policy", href: "#privacy" },
+      { label: "Terms of Use", href: "#terms" },
+      { label: "Disclaimer", href: "#disclaimer" },
+    ],
+  },
+  {
+    title: "Resources",
+    links: [
+      { label: "Health Tips", href: "#health-tips" },
+      { label: "Blog", href: "#blog" },
+      { label: "Help Center", href: "#help" },
+    ],
   },
 ];
