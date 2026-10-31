@@ -11,10 +11,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       ...options.headers,
     },
   });
-  const result = await response.json() as T & { error?: string };
+  const result = await response.json() as T & { error?: string; reply?: string };
 
   if (!response.ok) {
-    throw new Error(result.error || "The request could not be completed.");
+    throw new Error(result.reply || result.error || "The request could not be completed.");
   }
 
   return result;
@@ -38,13 +38,7 @@ export async function sendChatMessage(
   });
   if (!result.reply) throw new Error(result.error || "The assistant returned an empty reply.");
 
-  const parsedBody = new DOMParser().parseFromString(result.reply, "text/html").body;
-  parsedBody.querySelectorAll("li").forEach((item) => {
-    item.insertAdjacentText("afterbegin", "• ");
-    item.insertAdjacentText("afterend", "\n");
-  });
-  parsedBody.querySelectorAll("p").forEach((paragraph) => paragraph.insertAdjacentText("afterend", "\n\n"));
-  return parsedBody.textContent?.replace(/\n[ \t]+/g, "\n").replace(/\n{3,}/g, "\n\n").trim() || result.reply;
+  return result.reply.replace(/\r\n?/g, "\n").trim();
 }
 
 export async function listConversations(): Promise<Pick<Conversation, "id" | "title" | "updatedAt">[]> {

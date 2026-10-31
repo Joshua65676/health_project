@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: application/json');
+set_time_limit(130);
 
 $frontendOrigin = rtrim(getenv('FRONTEND_ORIGIN') ?: 'http://localhost:5174', '/');
 $requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
@@ -40,16 +41,9 @@ function loadEnv($path)
 }
 loadEnv(__DIR__ . '/../.env');
 
-$hfToken = getenv('HF_API_KEY');
-$url     = "https://router.huggingface.co/v1/chat/completions";
-
 $userMessage = trim($_POST['message'] ?? '');
 $history = json_decode($_POST['history'] ?? '[]', true);
-$history = is_array($history) ? array_slice($history, -20) : [];
-$responseStyle = $_POST['responseStyle'] ?? 'balanced';
-if (!in_array($responseStyle, ['concise', 'balanced', 'detailed'], true)) {
-    $responseStyle = 'balanced';
-}
+$history = is_array($history) ? array_slice($history, -6) : [];
 $hasFile     = isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK;
 
 if (empty($userMessage) && !$hasFile) {
@@ -155,47 +149,19 @@ if (!$isHealth) {
     }
 }
 
-// ── System prompt ──────────────────────────────────────────
-if ($isHealth) {
-    $systemPrompt = "You are a health assistant chatbot.
-     Extract symptoms, explain possible causes, give lifestyle tips, triage advice, and remind the user to consult a healthcare provider. Keep language simple and supportive.
-     When responding , ALWAYS use this exact format:
-     Begin with a caring, empathetic message that acknowledges the user's feelings.
-     Then provide a structured response with the following sections:
-
-     SYMPTOMS IDENTIFIED:
-     - List each symptom on a new line with a dash
-
-     POSSIBLE CAUSES:
-     - List each cause and explain possible causes on a new line with a dash
-
-     LIFESTYLE TIPS:
-     - Give lifestyle tips in a numbered list format, with each tip on a new line.
-     1. First tip
-     2. Second tip
-     3. Third tip
-
-    TRIAGE LEVEL:
-    State if it is Mild, Moderate, or Severe and explain why in one sentence.
-
-    IMPORTANT REMINDER:
-    Write one sentence reminding the user to consult a healthcare provider.
-    Keep language simple, clear, and supportive. Always follow this format strictly.";
-} else {
-    $systemPrompt = "You are a friendly chatbot.
-    When responding, keep your reply clear, and easy to read.
-    - Use a new line for each new idea or point.
-    - If listing things, put each item on its own line with a dash.
-    - Keep responses warm, concise, and supportive message that feel caring, almost like a health-friendly companion.
-    - Do not give medical advice.";
-}
-
-$styleInstructions = [
-    'concise' => 'Keep the reply brief and focused. Use only the essential explanation and next steps.',
-    'balanced' => 'Give a clear answer with enough context and practical next steps, without unnecessary length.',
-    'detailed' => 'Give a thorough, well-organized explanation with useful context and practical next steps.',
-];
-$systemPrompt .= "\n\nRESPONSE LENGTH: " . $styleInstructions[$responseStyle];
+$systemPrompt = <<<'PROMPT'
+You are a friendly health information assistant, not a doctor. Reply in plain
+text only. Do not use Markdown: no #, no *, no bold, no bullet symbols, no
+tables. Write in short, simple paragraphs, like a normal chat message. Keep
+answers under 120 words unless the user asks for more detail. Start with the
+direct answer. Give at most 3 or 4 key points as short sentences. Put one
+short safety note at the end only when it matters, for example: 'If this gets
+worse or lasts more than a few days, please see a doctor.' If the user
+describes a possible emergency (chest pain, trouble breathing, severe
+bleeding, stroke signs, thoughts of self-harm), tell them clearly and
+calmly to call their local emergency number or go to the
+nearest hospital right away. Do not say 911.
+PROMPT;
 
 // ── Build messages array ───────────────────────────────────
 $userContent = [];
@@ -221,90 +187,127 @@ if (empty($textPrompt) && $isImage) {
 
 $userContent[] = ["type" => "text", "text" => $textPrompt];
 
-$data = [
-    "model"      => "CohereLabs/aya-vision-32b:cohere",
-    "messages"   => array_merge(
-        [["role" => "system", "content" => $systemPrompt]],
-        array_values(array_filter(
-            $history,
-            static fn($message) =>
-            is_array($message)
-                && in_array($message['role'] ?? null, ['user', 'assistant'], true)
-                && is_string($message['content'] ?? null)
-        )),
-        [["role" => "user", "content" => $userContent]]
-    ),
-    "max_tokens" => match ($responseStyle) {
-        'concise' => 350,
-        'detailed' => 1000,
-        default => 600,
+$history = array_values(array_filter(
+    $history,
+    static fn($message) =>
+    is_array($message)
+        && in_array($message['role'] ?? null, ['user', 'assistant'], true)
+        && is_string($message['content'] ?? null)
+));
+$messages = array_merge(
+    [["role" => "system", "content" => $systemPrompt]],
+    $history,
+    [["role" => "user", "content" => $userContent]]
+);
+$maxTokens = 400;
+
+function cleanReply(string $text): string
+{
+    $cleaned = preg_replace('#<(thought|think)>.*?</\1>#is', '', $text);
+    return trim($cleaned ?? $text);
+}
+
+function stripMarkdown($text): string
+{
+    $text = preg_replace('/^#{1,6}\s*/m', '', $text);
+    $text = preg_replace('/\*\*(.*?)\*\*/s', '$1', $text);
+    $text = preg_replace('/^\s*[\*\-]\s+/m', '', $text);
+    $text = preg_replace('/^\s*-{3,}\s*$/m', '', $text);
+    $text = preg_replace('/\n{3,}/', "\n\n", $text);
+    return trim($text);
+}
+
+function askAI(array $messages, int $maxTokens): ?string
+{
+    $geminiUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+    $groqUrl = 'https://api.groq.com/openai/v1/chat/completions';
+    $modelChain = [
+        [
+            'model' => 'gemini-3.5-flash-lite',
+            'url' => $geminiUrl,
+            'key_env' => 'GEMINI_API_KEY',
+        ],
+        [
+            'model' => 'openai/gpt-oss-120b',
+            'url' => $groqUrl,
+            'key_env' => 'GROQ_API_KEY',
+        ],
+        [
+            'model' => 'gemma-4-31b-it',
+            'url' => $geminiUrl,
+            'key_env' => 'GEMINI_API_KEY',
+        ],
+        [
+            'model' => 'qwen/qwen3.8-27b',
+            'url' => $groqUrl,
+            'key_env' => 'GROQ_API_KEY',
+        ],
+    ];
+
+    foreach ($modelChain as $modelConfig) {
+        $apiKey = trim((string) (getenv($modelConfig['key_env']) ?: ''));
+        if ($apiKey === '') {
+            error_log("AI model {$modelConfig['model']} failed with HTTP 0: API key is not configured");
+            continue;
+        }
+
+        $data = [
+            'model' => $modelConfig['model'],
+            'messages' => $messages,
+            'max_tokens' => $maxTokens,
+        ];
+        $ch = curl_init($modelConfig['url']);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Authorization: Bearer ' . $apiKey,
+            'Content-Type: application/json',
+        ]);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+
+        $response = curl_exec($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($response === false) {
+            error_log("AI model {$modelConfig['model']} failed with HTTP {$httpCode}: cURL error: {$curlError}");
+            continue;
+        }
+
+        if ($httpCode === 429 || $httpCode >= 500) {
+            error_log("AI model {$modelConfig['model']} failed with HTTP {$httpCode}");
+            continue;
+        }
+
+        if ($httpCode < 200 || $httpCode >= 300) {
+            error_log("AI model {$modelConfig['model']} failed with HTTP {$httpCode}");
+            break;
+        }
+
+        $decoded = json_decode($response, true);
+        $content = $decoded['choices'][0]['message']['content'] ?? '';
+        $cleanedReply = is_string($content) ? stripMarkdown(cleanReply($content)) : '';
+        if ($cleanedReply === '') {
+            error_log("AI model {$modelConfig['model']} failed with HTTP {$httpCode}: empty reply after cleaning");
+            continue;
+        }
+
+        error_log("AI model {$modelConfig['model']} answered with HTTP {$httpCode}");
+        return $cleanedReply;
     }
-];
 
-// ── API call ───────────────────────────────────────────────
-$ch = curl_init($url);
-curl_setopt($ch, CURLOPT_HTTPHEADER, [
-    "Authorization: Bearer $hfToken",
-    "Content-Type: application/json"
-]);
-curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-
-$response = curl_exec($ch);
-
-if ($response === false) {
-    echo json_encode(['reply' => 'cURL error: ' . curl_error($ch)]);
-    curl_close($ch);
-    exit;
+    return null;
 }
 
-curl_close($ch);
-$decoded = json_decode($response, true);
+$raw = askAI($messages, $maxTokens);
 
-$raw = $decoded['choices'][0]['message']['content']
-    ?? null;
 if ($raw === null) {
-    echo json_encode([
-        'reply' => 'DEBUG: ' . json_encode($decoded)
-    ]);
+    http_response_code(503);
+    echo json_encode(['reply' => 'Sorry, the assistant is busy right now. Please try again shortly.']);
     exit;
 }
 
-// =====================
-// POST-PROCESSING
-// =====================
-
-// Normalize line endings
-$text = str_replace(["\r\n", "\r"], "\n", $raw);
-
-// Fix section headers → bold
-$text = preg_replace('/^([A-Z][A-Z\s]+:)$/m', '<strong>$1</strong>', $text);
-
-// Convert dash/bullet list items → <li>
-$text = preg_replace('/^\s*[-•]\s+(.+)$/m', '<li>$1</li>', $text);
-
-// Convert numbered lines → <li>
-$text = preg_replace('/^\s*\d+\.\s+(.+)$/m', '<li>$1</li>', $text);
-
-// Wrap consecutive <li> in <ul>
-$text = preg_replace('/(<li>.*?<\/li>\n?)+/s', '<ul>$0</ul>', $text);
-
-// Convert double newlines → paragraph break
-$text = preg_replace('/\n{2,}/', '</p><p>', $text);
-
-// Remove leftover single newlines (NO nl2br)
-$text = str_replace("\n", ' ', $text);
-
-// Wrap in paragraph
-$text = '<p>' . $text . '</p>';
-
-// Clean up empty paragraphs
-$text = preg_replace('/<p>\s*<\/p>/', '', $text);
-
-// Clean up <p> tags wrapping <ul> (invalid HTML)
-$text = preg_replace('/<p>(\s*<ul>)/s', '$1', $text);
-$text = preg_replace('/(<\/ul>\s*)<\/p>/s', '$1', $text);
-
-echo json_encode(['reply' => $text]);
+echo json_encode(['reply' => $raw]);
