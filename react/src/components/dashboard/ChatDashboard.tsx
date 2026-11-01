@@ -64,7 +64,9 @@ export default function ChatDashboard() {
     saveHistory: true,
   });
   const [activePage, setActivePage] = useState<DashboardPage>("chat");
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [chatGeneration, setChatGeneration] = useState(0);
+  const [historyRefreshVersion, setHistoryRefreshVersion] = useState(0);
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
 
@@ -170,6 +172,21 @@ export default function ChatDashboard() {
     setActivePage("chat");
   }
 
+  function handleConversationDeleted(id: number) {
+    setHistoryRefreshVersion((version) => version + 1);
+    if (selectedConversation?.id !== id) return;
+
+    setSelectedConversation(null);
+    setChatGeneration((generation) => generation + 1);
+    if (userId) {
+      try {
+        sessionStorage.removeItem(`mediai-chat-session:${userId}`);
+      } catch {
+        // The dashboard remains usable if browser storage is unavailable.
+      }
+    }
+  }
+
   if (error) {
     return (
       <main className="grid min-h-screen place-items-center bg-slate-50 p-6 text-slate-800">
@@ -192,13 +209,37 @@ export default function ChatDashboard() {
         activePage={activePage}
         onPageChange={setActivePage}
         onNewChat={startNewChat}
-        historyRefreshKey={selectedConversation?.updatedAt}
+        historyRefreshKey={`${selectedConversation?.updatedAt ?? ""}:${historyRefreshVersion}`}
         onSelectConversation={openConversation}
         userName={userName}
+        mobileOpen={mobileSidebarOpen}
+        onMobileClose={() => setMobileSidebarOpen(false)}
       />
+      {mobileSidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation sidebar"
+          onClick={() => setMobileSidebarOpen(false)}
+          className="fixed inset-0 z-40 cursor-pointer border-0 bg-black/35 p-0 lg:hidden"
+        />
+      )}
       <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <nav className="h-20 w-full shrink-0 border-b border-FormBg bg-BoardBg shadow-medium">
           <div className="flex h-full min-w-0 items-center gap-3 px-3 py-3 sm:gap-4 sm:px-5">
+            <button
+              type="button"
+              aria-label={
+                mobileSidebarOpen
+                  ? "Close navigation sidebar"
+                  : "Open navigation sidebar"
+              }
+              aria-expanded={mobileSidebarOpen}
+              aria-controls="dashboard-sidebar"
+              onClick={() => setMobileSidebarOpen((open) => !open)}
+              className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-lg border-0 bg-SoftGreen text-xl text-TextColor lg:hidden"
+            >
+              <span aria-hidden="true">{mobileSidebarOpen ? "×" : "☰"}</span>
+            </button>
             <div className="grid size-10 shrink-0 place-items-center rounded-full bg-SoftGreen p-2 shadow-hard sm:size-12">
               <img src={Logo} alt="" />
             </div>
@@ -254,6 +295,7 @@ export default function ChatDashboard() {
                   setSelectedConversation(conversation);
                   setActivePage("chat");
                 }}
+                onConversationDeleted={handleConversationDeleted}
                 onNewChat={() => {
                   startNewChat();
                 }}

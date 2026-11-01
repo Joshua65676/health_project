@@ -16,6 +16,7 @@ type HistoryItem = {
 
 type HistoryPageProps = {
   onSelectConversation: (conversation: Conversation) => void;
+  onConversationDeleted: (id: number) => void;
   onNewChat: () => void;
 };
 
@@ -33,6 +34,7 @@ function formatDate(value: string) {
 
 export default function HistoryPage({
   onSelectConversation,
+  onConversationDeleted,
   onNewChat,
 }: HistoryPageProps) {
   const [conversations, setConversations] = useState<HistoryItem[]>([]);
@@ -93,6 +95,7 @@ export default function HistoryPage({
       setConversations((current) =>
         current.filter((item) => item.id !== conversation.id),
       );
+      onConversationDeleted(conversation.id);
     } catch (reason) {
       setError(
         reason instanceof Error

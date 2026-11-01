@@ -17,6 +17,8 @@ type SidebarProps = {
   onSelectConversation: (conversation: Conversation) => void;
   historyRefreshKey: string | undefined;
   userName: string;
+  mobileOpen: boolean;
+  onMobileClose: () => void;
 };
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -26,13 +28,20 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSelectConversation,
   historyRefreshKey,
   userName,
+  mobileOpen,
+  onMobileClose,
 }) => {
   const [width, setWidth] = useState(() =>
     window.innerWidth < 640 ? MIN_WIDTH : window.innerWidth < 1024 ? 256 : 280,
   );
   const [resizing, setResizing] = useState(false);
   const isResizing = useRef(false);
-  const isCollapsed = width <= COLLAPSED_BREAKPOINT;
+  const isCollapsed =
+    width <= COLLAPSED_BREAKPOINT && window.innerWidth >= 1024;
+  const handlePageChange = (page: DashboardPage) => {
+    onPageChange(page);
+    onMobileClose();
+  };
 
   const onMouseMove = useCallback((e: MouseEvent) => {
     if (!isResizing.current) return;
@@ -112,13 +121,9 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside
-      className="relative h-dvh shrink-0 overflow-hidden border-r border-FormBg bg-white"
-      style={{
-        width,
-        transition: resizing
-          ? "none"
-          : "width 180ms cubic-bezier(0.2, 0.8, 0.2, 1)",
-      }}
+      id="dashboard-sidebar"
+      className={`fixed inset-y-0 left-0 z-50 h-dvh w-72 shrink-0 overflow-hidden border-r border-FormBg bg-white shadow-xl transition-transform duration-300 ease-out lg:relative lg:z-auto lg:w-[var(--sidebar-width)] lg:shadow-none lg:transition-[width] ${mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${resizing ? "lg:transition-none" : ""}`}
+      style={{ "--sidebar-width": `${width}px` } as React.CSSProperties}
     >
       <div
         className={`flex h-full min-h-0 flex-col overflow-y-auto ${isCollapsed ? "items-center gap-6 px-1 py-4" : "items-stretch gap-8 px-4 py-4"}`}
@@ -156,15 +161,26 @@ const Sidebar: React.FC<SidebarProps> = ({
               }
               aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              className="grid size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-lg text-[#52645c] hover:bg-ButtonBg2"
+              className="hidden size-6 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-lg text-[#52645c] hover:bg-ButtonBg2 lg:grid"
             >
               <span aria-hidden="true">{isCollapsed ? "›" : "‹"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={onMobileClose}
+              aria-label="Close navigation sidebar"
+              className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-md border-0 bg-transparent text-2xl leading-none text-[#52645c] hover:bg-ButtonBg2 lg:hidden"
+            >
+              <span aria-hidden="true">×</span>
             </button>
           </div>
 
           <button
             type="button"
-            onClick={onNewChat}
+            onClick={() => {
+              onNewChat();
+              onMobileClose();
+            }}
             title={isCollapsed ? "New Chat" : undefined}
             aria-label="New Chat"
             className={`mt-6 flex h-10 w-full cursor-pointer items-center rounded-lg bg-TextColor text-white transition-colors hover:bg-emerald-800 ${isCollapsed ? "justify-center px-0" : "justify-center gap-2 px-4"}`}
@@ -179,27 +195,30 @@ const Sidebar: React.FC<SidebarProps> = ({
         <DashBoardList
           activePage={activePage}
           collapsed={isCollapsed}
-          onPageChange={onPageChange}
+          onPageChange={handlePageChange}
         />
         <History
           activePage={activePage}
           collapsed={isCollapsed}
-          onPageChange={onPageChange}
-          onSelectConversation={onSelectConversation}
+          onPageChange={handlePageChange}
+          onSelectConversation={(conversation) => {
+            onSelectConversation(conversation);
+            onMobileClose();
+          }}
           refreshKey={historyRefreshKey}
         />
         <div className="mt-auto w-full border-t border-BorderColor pt-3">
           <Profile
             activePage={activePage}
             collapsed={isCollapsed}
-            onPageChange={onPageChange}
+            onPageChange={handlePageChange}
             userName={userName}
           />
         </div>
       </div>
 
       <div
-        className={`absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize touch-none transition-colors ${resizing ? "bg-TextColor/20" : "hover:bg-TextColor/15"}`}
+        className={`absolute inset-y-0 right-0 z-10 hidden w-2 cursor-col-resize touch-none transition-colors lg:block ${resizing ? "bg-TextColor/20" : "hover:bg-TextColor/15"}`}
         onPointerDown={startResizing}
         role="separator"
         aria-label="Resize sidebar"
