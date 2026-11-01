@@ -91,3 +91,43 @@ export const FOOTER_COLUMNS = [
     ],
   },
 ];
+
+export const HEALTH_EMERGENCY_NUMBERS = [
+  { flag: "🇳🇬", country: "Nigeria", number: "112" },
+  { flag: "🇺🇸", country: "United States", number: "911" },
+  { flag: "🇩🇪", country: "Germany", number: "112 ambulance/fire, 110 police" },
+  { flag: "🇨🇦", country: "Canada", number: "911" },
+];
+
+export const HEALTH_TIPS = [
+  "Keep water nearby and drink when you feel thirsty.",
+  "Try to keep a regular sleep and wake schedule.",
+  "Wash your hands with soap before eating.",
+  "Take a short walk when it fits your day.",
+  "Add a fruit or vegetable to your next meal.",
+  "Pause for a few slow breaths when you feel stressed.",
+  "Look away from your screen regularly to rest your eyes.",
+  "Cover coughs and sneezes with a tissue or your elbow.",
+  "Use shade, clothing, or sunscreen to protect your skin outdoors.",
+  "Make time to speak with someone you trust.",
+  "Keep frequently touched surfaces clean.",
+  "Choose a comfortable posture when sitting or working.",
+  "Make time to stretch gently during long periods of sitting.",
+  "Store and prepare food with clean hands and utensils.",
+  "Take a few minutes away from screens before bedtime.",
+  "Spend a little time outside when the weather allows.",
+  "Keep your living space aired out when it is safe to do so.",
+  "Take regular breaks during tasks that need close focus.",
+  "Notice when you need rest and make room for a pause.",
+  "Try to include a source of protein with meals.",
+  "Keep a reusable water bottle clean if you use one.",
+  "Use hearing protection around loud sounds when available.",
+  "Make time for an activity that helps you unwind.",
+  "Check that walkways at home are clear to help prevent trips.",
+  "Follow food storage guidance on product labels.",
+  "Keep up with routine health visits that are available to you.",
+  "When outdoors, take breaks in the shade on hot days.",
+  "Set a reminder to stand and move during a long work session.",
+  "Be kind to yourself when a day does not go as planned.",
+  "Reach out to a trusted person when you feel overwhelmed.",
+];

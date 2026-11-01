@@ -62,6 +62,21 @@ try {
         jsonResponse(['conversations' => $conversations]);
     }
 
+    if ($method === 'DELETE') {
+        $id = filter_var($_GET['id'] ?? null, FILTER_VALIDATE_INT);
+        if (!$id || $id < 1) {
+            jsonResponse(['error' => 'Invalid conversation id.'], 400);
+        }
+
+        $statement = $pdo->prepare('DELETE FROM chat_conversations WHERE id = ? AND user_id = ?');
+        $statement->execute([$id, $user['id']]);
+        if ($statement->rowCount() === 0) {
+            jsonResponse(['error' => 'Conversation not found.'], 404);
+        }
+
+        jsonResponse(['deleted' => true, 'id' => (int) $id]);
+    }
+
     if ($method === 'POST') {
         $data = requestData();
         $messages = $data['messages'] ?? null;

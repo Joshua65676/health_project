@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { getConversation, listConversations } from "../chatApi";
+import {
+  deleteConversation,
+  getConversation,
+  listConversations,
+} from "../chatApi";
 import type { Conversation } from "../chatTypes";
 import { PlusIcon, Logo } from "../../../assets";
 
@@ -35,6 +39,7 @@ export default function HistoryPage({
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [openingId, setOpeningId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -71,6 +76,31 @@ export default function HistoryPage({
           : "Could not open this conversation.",
       );
       setOpeningId(null);
+    }
+  }
+
+  async function removeConversation(conversation: HistoryItem) {
+    const title = conversation.title || "Untitled conversation";
+    if (
+      !window.confirm(`Delete "${title}" from history? This cannot be undone.`)
+    )
+      return;
+
+    setDeletingId(conversation.id);
+    setError("");
+    try {
+      await deleteConversation(conversation.id);
+      setConversations((current) =>
+        current.filter((item) => item.id !== conversation.id),
+      );
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Could not delete this conversation.",
+      );
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -165,47 +195,60 @@ export default function HistoryPage({
         <div className="flex flex-col" role="list">
           <AnimatePresence initial={false}>
             {filtered.map((conversation, index) => (
-              <motion.button
-                type="button"
+              <motion.div
                 role="listitem"
-                className="relative flex min-h-19 cursor-pointer items-center gap-3.5 border-0 border-b border-[#e7eeea] bg-transparent px-2.5 py-3 text-left transition hover:bg-[#f2f8f4] hover:px-3.5 disabled:cursor-wait max-sm:gap-2.5"
+                className="relative flex min-h-19 items-center gap-3.5 border-b border-[#e7eeea] px-2.5 py-3 transition-colors hover:bg-[#f2f8f4] max-sm:gap-2.5"
                 key={conversation.id}
-                onClick={() => openConversation(conversation.id)}
-                disabled={openingId !== null}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -8 }}
                 transition={{ delay: index * 0.035, duration: 0.2 }}
               >
-                <span
-                  className="grid w-10 h-10 shrink-0 place-items-center rounded-[10px] bg-SoftGreen shadow-hard hover:motion-safe:animate-spin motion-reduce:animate-none [animation-duration:12s]"
-                  aria-hidden="true"
+                <button
+                  type="button"
+                  className="flex min-w-0 flex-1 cursor-pointer items-center gap-3.5 border-0 bg-transparent p-0 text-left disabled:cursor-wait max-sm:gap-2.5"
+                  onClick={() => openConversation(conversation.id)}
+                  disabled={openingId !== null || deletingId !== null}
                 >
-                  <img src={Logo} alt="" />
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-                  <strong className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-Inter font-semibold text-Black">
-                    {conversation.title || "Untitled conversation"}
-                  </strong>
-                  <small className="text-[11px] text-[#87958f] font-Inter font-medium">
-                    Open conversation
-                  </small>
-                </span>
-                <time
-                  className="shrink-0 text-[11px] text-[#71847b] font-Inter font-medium max-sm:text-[10px]"
-                  dateTime={conversation.updatedAt}
+                  <span
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-SoftGreen shadow-hard hover:motion-safe:animate-spin motion-reduce:animate-none [animation-duration:12s]"
+                    aria-hidden="true"
+                  >
+                    <img src={Logo} alt="" />
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+                    <strong className="overflow-hidden text-ellipsis whitespace-nowrap text-[13px] font-Inter font-semibold text-Black">
+                      {conversation.title || "Untitled conversation"}
+                    </strong>
+                    <small className="text-[11px] text-[#87958f] font-Inter font-medium">
+                      Open conversation
+                    </small>
+                  </span>
+                  <time
+                    className="shrink-0 text-[11px] text-[#71847b] font-Inter font-medium max-sm:text-[10px]"
+                    dateTime={conversation.updatedAt}
+                  >
+                    {formatDate(conversation.updatedAt)}
+                  </time>
+                  <span className="text-base text-[#087e68]" aria-hidden="true">
+                    ↗
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="shrink-0 cursor-pointer rounded-md border border-[#e5c7c3] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#a34840] transition-colors hover:bg-[#fff3f1] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a34840] disabled:cursor-wait disabled:opacity-60"
+                  onClick={() => removeConversation(conversation)}
+                  disabled={openingId !== null || deletingId !== null}
+                  aria-label={`Delete ${conversation.title || "untitled conversation"}`}
                 >
-                  {formatDate(conversation.updatedAt)}
-                </time>
-                <span className="text-base text-[#087e68]" aria-hidden="true">
-                  ↗
-                </span>
+                  {deletingId === conversation.id ? "Deleting…" : "Delete"}
+                </button>
                 {openingId === conversation.id && (
                   <span className="absolute right-10 font-Inter font-medium text-[11px] text-[#087e68] max-sm:right-8">
                     Opening…
                   </span>
                 )}
-              </motion.button>
+              </motion.div>
             ))}
           </AnimatePresence>
         </div>

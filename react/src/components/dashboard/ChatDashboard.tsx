@@ -8,6 +8,7 @@ import {
 } from "../../auth";
 import { getConversation, saveConversation } from "./chatApi";
 import Sidebar from "./Sidebar";
+import SecondSidebar from "./SecondSidebar";
 import type { DashboardPage } from "./types";
 import ChatPage from "./pages/ChatPage";
 import HistoryPage from "./pages/HistoryPage";
@@ -273,6 +274,7 @@ export default function ChatDashboard() {
           </motion.section>
         </AnimatePresence>
       </main>
+      {activePage === "chat" && <SecondSidebar />}
     </div>
   );
 }

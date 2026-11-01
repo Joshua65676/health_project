@@ -1,19 +1,60 @@
 <?php
 header('Content-Type: application/json');
 
+$frontendOrigin = rtrim(getenv('FRONTEND_ORIGIN') ?: 'http://localhost:5174', '/');
+$requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+if ($requestOrigin !== '' && !hash_equals($frontendOrigin, $requestOrigin)) {
+    http_response_code(403);
+    echo json_encode(['status' => 'error', 'message' => 'This origin is not allowed.']);
+    exit;
+}
+if ($requestOrigin !== '') {
+    header('Access-Control-Allow-Origin: ' . $frontendOrigin);
+    header('Vary: Origin');
+}
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
+    header('Access-Control-Allow-Methods: GET, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type');
+    http_response_code(204);
+    exit;
+}
+
 // Load keys from environment
 $newsapiKey = getenv('NEWSAPI_KEY');
 $mediastackKey = getenv('MEDIASTACK_KEY');
 
+function fetchNewsSource($url)
+{
+    $context = stream_context_create([
+        'http' => [
+            'timeout' => 10,
+            'ignore_errors' => true,
+            'user_agent' => 'MediAIHealthNews/1.0',
+        ],
+    ]);
+    $body = @file_get_contents($url, false, $context);
+    return is_string($body) && $body !== '' ? $body : null;
+}
+
 // --- WHO RSS Feed (XML) ---
-function fetchWHOFeed($url) {
-    $xml = simplexml_load_file($url);
+function fetchWHOFeed($url)
+{
+    $body = fetchNewsSource($url);
+    if ($body === null) return [];
+
+    $xml = @simplexml_load_string($body);
+    if ($xml === false || !isset($xml->channel->item)) return [];
+
     $json = [];
     foreach ($xml->channel->item as $item) {
+        $title = trim((string) $item->title);
+        $link = trim((string) $item->link);
+        if ($title === '' || $link === '') continue;
+
         $json[] = [
-            'title' => (string)$item->title,
-            'link' => (string)$item->link,
-            'pubDate' => (string)$item->pubDate,
+            'title' => $title,
+            'link' => $link,
+            'pubDate' => (string) $item->pubDate,
             'description' => (string)$item->description,
             'author' => (string)$item->author,
             'source' => 'WHO'
@@ -23,16 +64,23 @@ function fetchWHOFeed($url) {
 }
 
 // --- NewsAPI (JSON) ---
-function fetchNewsAPI($url) {
-    $data = file_get_contents($url);
+function fetchNewsAPI($url)
+{
+    $data = fetchNewsSource($url);
+    if ($data === null) return [];
+
     $json = json_decode($data, true);
     $articles = [];
-    if (isset($json['articles'])) {
+    if (isset($json['articles']) && is_array($json['articles'])) {
         foreach ($json['articles'] as $article) {
+            $title = trim((string) ($article['title'] ?? ''));
+            $link = trim((string) ($article['url'] ?? ''));
+            if ($title === '' || $link === '') continue;
+
             $articles[] = [
-                'title' => $article['title'],
-                'link' => $article['url'],
-                'pubDate' => $article['publishedAt'],
+                'title' => $title,
+                'link' => $link,
+                'pubDate' => (string) ($article['publishedAt'] ?? ''),
                 'source' => 'NewsAPI'
             ];
         }
@@ -41,22 +89,29 @@ function fetchNewsAPI($url) {
 }
 
 // --- Mediastack (JSON) ---
-function fetchMediastack($url) {
-    $data = file_get_contents($url);
+function fetchMediastack($url)
+{
+    $data = fetchNewsSource($url);
+    if ($data === null) return [];
+
     $json = json_decode($data, true);
     $articles = [];
-    if (isset($json['data'])) {
+    if (isset($json['data']) && is_array($json['data'])) {
         foreach ($json['data'] as $article) {
+            $title = trim((string) ($article['title'] ?? ''));
+            $link = trim((string) ($article['url'] ?? ''));
+            if ($title === '' || $link === '') continue;
+
             $articles[] = [
-                'title' => $article['title'],
-                'link' => $article['url'],
-                'pubDate' => $article['published_at'],
-                'image' => $article['image'],
-                'description' => $article['description'],
-                'author' => $article['author'],
-                'country' => $article['country'],
-                'language' => $article['language'],
-                'source_name' => $article['source'],
+                'title' => $title,
+                'link' => $link,
+                'pubDate' => (string) ($article['published_at'] ?? ''),
+                'image' => $article['image'] ?? null,
+                'description' => $article['description'] ?? null,
+                'author' => $article['author'] ?? null,
+                'country' => $article['country'] ?? null,
+                'language' => $article['language'] ?? null,
+                'source_name' => $article['source'] ?? null,
                 'source' => 'Mediastack'
             ];
         }
@@ -77,5 +132,4 @@ echo json_encode([
     'status' => 'success',
     'count' => count($allNews),
     'articles' => $allNews
-], JSON_PRETTY_PRINT);
-?>
+], JSON_PRETTY_PRINT | JSON_INVALID_UTF8_SUBSTITUTE);

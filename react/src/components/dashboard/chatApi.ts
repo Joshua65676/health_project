@@ -51,6 +51,12 @@ export async function getConversation(id: number): Promise<Conversation> {
   return result.conversation;
 }
 
+export async function deleteConversation(id: number): Promise<{ deleted: boolean }> {
+  return request<{ deleted: boolean }>(`history.php?id=${id}`, {
+    method: "DELETE",
+  });
+}
+
 export async function saveConversation(input: SaveConversationInput): Promise<{ id: number }> {
   return request<{ id: number }>("history.php", {
     method: "POST",
