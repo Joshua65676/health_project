@@ -1,6 +1,6 @@
 import type { ChatMessage, Conversation, SaveConversationInput } from "./chatTypes";
 
-const apiBaseUrl = (import.meta.env.VITE_PHP_API_URL || "http://localhost:8083").replace(/\/$/, "");
+const apiBaseUrl = (import.meta.env.VITE_PHP_API_URL || "https://health-project-er3s.onrender.com").replace(/\/$/, "");
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${apiBaseUrl}/${path}`, {

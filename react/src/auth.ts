@@ -16,7 +16,7 @@ type AuthResult = {
   error?: string
 }
 
-const apiBaseUrl = (import.meta.env.VITE_PHP_API_URL || 'http://localhost:8083').replace(/\/$/, '')
+const apiBaseUrl = (import.meta.env.VITE_PHP_API_URL || 'https://health-project-er3s.onrender.com').replace(/\/$/, '')
 
 export const authCallbackUrl = import.meta.env.VITE_AUTH_CALLBACK_URL || '/chatdashboard'
 export const googleAuthUrl = `${apiBaseUrl}/auth/google-start.php`

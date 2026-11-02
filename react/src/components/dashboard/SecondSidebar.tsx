@@ -24,7 +24,7 @@ const NEWS_CACHE_TTL = 30 * 60 * 1000;
 const NEWS_REFRESH_INTERVAL = 6 * 1000;
 const TIPS_REFRESH_INTERVAL = 8 * 1000;
 const apiBaseUrl = (
-  import.meta.env.VITE_PHP_API_URL || "http://localhost:8083"
+  import.meta.env.VITE_PHP_API_URL || "https://health-project-er3s.onrender.com"
 ).replace(/\/$/, "");
 
 function parseArticles(value: unknown): HealthArticle[] {
