@@ -56,3 +56,13 @@ Keep `FRONTEND_ORIGIN`, `FRONTEND_CALLBACK_URL`, and `VITE_AUTH_CALLBACK_URL` al
 
 For production, use HTTPS, a dedicated least-privilege MySQL account, strong secrets, and an email sender configured for your domain. The checked-in Compose defaults are for local development only.
 
+## Deploy the PHP API to Render with Aiven MySQL
+
+The repository includes a root `render.yaml` Blueprint for the PHP Docker service. Create a Render Blueprint from the repository, then enter the prompted database and API credentials in Render's environment settings; never commit them to `render.yaml`. The Docker image binds Apache to Render's `PORT` and exposes `/health.php` for service health checks.
+
+For Aiven, set `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` from the Aiven service details. If the local `.env` calls the port `MYSQL_PORT`, copy its value to Render's `DB_PORT` (the PHP code also accepts `MYSQL_PORT`). In Render, add the Aiven CA certificate as a secret file named `ca.pem`; set `DB_SSL_CA=/etc/secrets/ca.pem`. The PDO connection verifies the server certificate when this setting is present. Apply `php-app/auth/schema.sql` to the Aiven database before using registration or account features.
+
+Initially, keep `FRONTEND_ORIGIN=http://localhost:5174`, `FRONTEND_LOGIN_URL=http://localhost:5174/login`, and `FRONTEND_CALLBACK_URL=http://localhost:5174/chatdashboard` so the local frontend can call the Render API. Set `AUTH_COOKIE_SECURE=true` and `AUTH_COOKIE_SAMESITE=None` for the cross-origin session cookie. After the frontend is deployed, replace those localhost URLs with its exact HTTPS origin and routes. Set the Google OAuth authorized redirect URI to `https://<your-render-service>.onrender.com/auth/google-callback.php` and update `GOOGLE_REDIRECT_URI` to the same value. Configure the Vercel frontend's `VITE_PHP_API_URL` to `https://<your-render-service>.onrender.com`.
+
+Some browsers restrict third-party cookies between unrelated `vercel.app` and `onrender.com` sites. If sign-in sessions are blocked after the frontend is hosted, use custom domains on the same registrable domain (for example, `app.example.com` and `api.example.com`) or a same-origin proxy.
+

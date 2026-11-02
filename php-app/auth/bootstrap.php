@@ -25,13 +25,20 @@ if ($requestOrigin !== '' && !hash_equals($frontendOrigin, $requestOrigin)) {
 }
 
 $cookieSecure = filter_var(getenv('AUTH_COOKIE_SECURE') ?: '0', FILTER_VALIDATE_BOOL);
+$sameSite = ucfirst(strtolower(trim(getenv('AUTH_COOKIE_SAMESITE') ?: ($cookieSecure ? 'None' : 'Lax'))));
+if (!in_array($sameSite, ['Lax', 'Strict', 'None'], true)) {
+    $sameSite = $cookieSecure ? 'None' : 'Lax';
+}
+if ($sameSite === 'None') {
+    $cookieSecure = true;
+}
 session_name('health_project_session');
 session_set_cookie_params([
     'lifetime' => 0,
     'path' => '/',
     'secure' => $cookieSecure,
     'httponly' => true,
-    'samesite' => 'Lax',
+    'samesite' => $sameSite,
 ]);
 session_start();
 
@@ -65,20 +72,30 @@ function database(): PDO
     }
 
     $host = getenv('DB_HOST') ?: 'mysql';
-    $port = getenv('DB_PORT') ?: '3306';
+    $port = getenv('DB_PORT') ?: getenv('MYSQL_PORT') ?: '3306';
     $name = getenv('DB_NAME') ?: 'mydb';
     $user = getenv('DB_USER') ?: 'root';
     $password = getenv('DB_PASSWORD') ?: 'root';
+
+    $options = [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+        PDO::ATTR_EMULATE_PREPARES => false,
+    ];
+    $sslCa = trim((string) (getenv('DB_SSL_CA') ?: ''));
+    if ($sslCa !== '') {
+        if (!is_readable($sslCa)) {
+            throw new RuntimeException('The configured database CA file is not readable.');
+        }
+        $options[PDO::MYSQL_ATTR_SSL_CA] = $sslCa;
+        $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = true;
+    }
 
     $connection = new PDO(
         "mysql:host=$host;port=$port;dbname=$name;charset=utf8mb4",
         $user,
         $password,
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES => false,
-        ]
+        $options
     );
 
     return $connection;
@@ -91,7 +108,7 @@ function frontendCallbackUrl(): string
 
 function appBaseUrl(): string
 {
-    return rtrim(getenv('APP_BASE_URL') ?: 'http://localhost:8083', '/');
+    return rtrim(getenv('APP_BASE_URL') ?: getenv('RENDER_EXTERNAL_URL') ?: 'http://localhost:8083', '/');
 }
 
 function authenticatedUser(PDO $pdo): ?array
