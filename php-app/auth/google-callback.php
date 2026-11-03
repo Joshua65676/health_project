@@ -28,7 +28,11 @@ function googleRequest(string $url, string $method, array $headers = [], ?string
     $decoded = is_string($response) ? json_decode($response, true) : null;
 
     if ($status < 200 || $status >= 300 || !is_array($decoded)) {
-        throw new RuntimeException('Google OAuth request failed.');
+        $providerError = is_array($decoded) && is_string($decoded['error'] ?? null)
+            ? $decoded['error']
+            : 'invalid_response';
+        $providerError = preg_replace('/[^a-zA-Z0-9_.-]/', '', $providerError) ?: 'unknown_error';
+        throw new RuntimeException("Google OAuth request failed (HTTP {$status}, {$providerError}).");
     }
 
     return $decoded;
