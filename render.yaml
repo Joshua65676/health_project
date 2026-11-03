@@ -21,11 +21,11 @@ services:
       - key: DB_SSL_CA
         value: /etc/secrets/ca.pem
       - key: FRONTEND_ORIGIN
-        value: http://localhost:5174
+        value: https://mediai-zeta.vercel.app
       - key: FRONTEND_LOGIN_URL
-        value: http://localhost:5174/login
+        value: https://mediai-zeta.vercel.app/login
       - key: FRONTEND_CALLBACK_URL
-        value: http://localhost:5174/chatdashboard
+        value: https://mediai-zeta.vercel.app/chatdashboard
       - key: AUTH_COOKIE_SECURE
         value: "true"
       - key: AUTH_COOKIE_SAMESITE
