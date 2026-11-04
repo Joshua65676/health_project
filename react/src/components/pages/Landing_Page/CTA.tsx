@@ -25,7 +25,7 @@ const CTA: React.FC = () => {
           towards a healthier you.
         </p>
         <div className="flex w-full flex-col items-stretch justify-center gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4 lg:gap-5">
-          <Link to="/.login">
+          <Link to="/login">
             <motion.button
               type="button"
               whileHover={shouldReduceMotion ? undefined : { y: -2 }}
