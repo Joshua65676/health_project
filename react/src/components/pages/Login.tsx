@@ -11,7 +11,14 @@ import {
   EyeClose,
 } from "../../assets";
 import { Link } from "react-router-dom";
-import { authCallbackUrl, googleAuthUrl, signIn } from "../../auth";
+import {
+  authCallbackUrl,
+  AuthRequestError,
+  getAuthErrorMessage,
+  googleAuthUrl,
+  resendVerificationEmail,
+  signIn,
+} from "../../auth";
 
 const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -20,23 +27,45 @@ const Login: React.FC = () => {
   const [remember, setRemember] = useState(false);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState("");
+  const [showResendVerification, setShowResendVerification] = useState(false);
+  const [resendBusy, setResendBusy] = useState(false);
+  const [resendFeedback, setResendFeedback] = useState("");
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setFeedback("");
+    setShowResendVerification(false);
+    setResendFeedback("");
 
     try {
       await signIn(email, password, remember);
       window.location.assign(authCallbackUrl);
     } catch (error) {
-      setFeedback(
-        error instanceof Error
-          ? error.message
-          : "Login failed. Please try again.",
+      setFeedback(getAuthErrorMessage(error));
+      setShowResendVerification(
+        error instanceof AuthRequestError &&
+          error.code === "EMAIL_NOT_VERIFIED",
       );
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function handleResendVerification() {
+    setResendBusy(true);
+    setResendFeedback("");
+
+    try {
+      const result = await resendVerificationEmail(email);
+      setResendFeedback(
+        result.message ||
+          "If an unverified account exists for this email, a confirmation email has been sent.",
+      );
+    } catch (error) {
+      setResendFeedback(getAuthErrorMessage(error));
+    } finally {
+      setResendBusy(false);
     }
   }
 
@@ -155,6 +184,23 @@ const Login: React.FC = () => {
               <p role="alert" className="w-full text-sm text-red-700">
                 {feedback}
               </p>
+            )}
+            {showResendVerification && (
+              <div className="flex flex-col items-start gap-2">
+                <button
+                  type="button"
+                  disabled={resendBusy}
+                  onClick={handleResendVerification}
+                  className="cursor-pointer text-sm font-semibold text-TextColor underline disabled:cursor-wait disabled:opacity-60"
+                >
+                  {resendBusy ? "Sending..." : "Resend verification email"}
+                </button>
+                {resendFeedback && (
+                  <p role="status" className="text-sm text-TextColor">
+                    {resendFeedback}
+                  </p>
+                )}
+              </div>
             )}
           </form>
           {/* Contiune */}

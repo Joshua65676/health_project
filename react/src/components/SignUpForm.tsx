@@ -9,10 +9,11 @@ import {
   ArrowRight,
   EyeClose,
 } from "../assets";
-import { Link } from "react-router-dom";
-import { googleAuthUrl, signUp } from "../auth";
+import { Link, useNavigate } from "react-router-dom";
+import { getAuthErrorMessage, googleAuthUrl, signUp } from "../auth";
 
 const SignUpForm: React.FC = () => {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -28,17 +29,10 @@ const SignUpForm: React.FC = () => {
     setFeedbackIsError(false);
 
     try {
-      const result = await signUp(name, email, password);
-      setFeedback(
-        result.message || "Check your email for a confirmation link.",
-      );
-      setPassword("");
+      await signUp(name, email, password);
+      navigate("/check-email", { state: { email: email.trim() } });
     } catch (error) {
-      setFeedback(
-        error instanceof Error
-          ? error.message
-          : "Signup failed. Please try again.",
-      );
+      setFeedback(getAuthErrorMessage(error));
       setFeedbackIsError(true);
     } finally {
       setBusy(false);
@@ -122,8 +116,6 @@ const SignUpForm: React.FC = () => {
                   <input
                     type={showPassword ? "text" : "password"}
                     required
-                    minLength={8}
-                    maxLength={72}
                     autoComplete="new-password"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}

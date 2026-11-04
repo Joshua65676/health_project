@@ -12,11 +12,24 @@ $email = strtolower(trim((string) ($data['email'] ?? '')));
 $password = (string) ($data['password'] ?? '');
 
 if ($name === '' || strlen($name) > 120 || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    jsonResponse(['error' => 'Enter a valid name and email address.'], 422);
+    jsonResponse([
+        'error' => 'Enter a valid name and email address.',
+        'code' => 'INVALID_NAME_EMAIL',
+    ], 422);
 }
 
-if (strlen($password) < 8 || strlen($password) > 72) {
-    jsonResponse(['error' => 'Password must be between 8 and 72 characters.'], 422);
+if (strlen($password) < 8) {
+    jsonResponse([
+        'error' => 'Password must be at least 8 characters long.',
+        'code' => 'PASSWORD_TOO_SHORT',
+    ], 422);
+}
+
+if (strlen($password) > 72) {
+    jsonResponse([
+        'error' => 'Password must be 72 characters or fewer.',
+        'code' => 'PASSWORD_TOO_LONG',
+    ], 422);
 }
 
 try {
@@ -26,7 +39,10 @@ try {
     $existingUser = $statement->fetch();
 
     if ($existingUser && $existingUser['email_verified_at'] !== null) {
-        jsonResponse(['error' => 'An account with this email already exists.'], 409);
+        jsonResponse([
+            'error' => 'An account with this email already exists',
+            'code' => 'EMAIL_ALREADY_EXISTS',
+        ], 409);
     }
 
     $token = bin2hex(random_bytes(32));
@@ -40,15 +56,21 @@ try {
         $statement->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT), $tokenHash]);
     }
 
-        try {
+    try {
         sendVerificationEmail($email, $name, $token);
     } catch (Throwable $mailError) {
         error_log('Verification email failed: ' . $mailError->getMessage());
-        jsonResponse(['error' => 'Your account was created, but we could not send the confirmation email. Please try again in a few minutes.'], 503);
+        jsonResponse([
+            'error' => "Your account was created, but we couldn't send the confirmation email. Please try again in a moment.",
+            'code' => 'EMAIL_SEND_FAILED',
+        ], 503);
     }
 
     jsonResponse(['message' => 'Check your email for a confirmation link.']);
 } catch (Throwable $error) {
     error_log('Registration failed: ' . $error->getMessage());
-    jsonResponse(['error' => 'We could not complete signup. Check the server email and database configuration, then try again.'], 503);
+    jsonResponse([
+        'error' => 'Something went wrong on our side. Please try again in a moment.',
+        'code' => 'SERVER_ERROR',
+    ], 503);
 }

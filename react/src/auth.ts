@@ -14,6 +14,7 @@ type AuthResult = {
   preferences?: UserPreferences
   message?: string
   error?: string
+  code?: string
 }
 
 const apiBaseUrl = (import.meta.env.VITE_PHP_API_URL || 'https://health-project-er3s.onrender.com').replace(/\/$/, '')
@@ -21,19 +22,68 @@ const apiBaseUrl = (import.meta.env.VITE_PHP_API_URL || 'https://health-project-
 export const authCallbackUrl = import.meta.env.VITE_AUTH_CALLBACK_URL || '/chatdashboard'
 export const googleAuthUrl = `${apiBaseUrl}/auth/google-start.php`
 
+const authErrorMessages: Record<string, string> = {
+  EMAIL_NOT_FOUND: 'No account found with this email. Please sign up first.',
+  WRONG_PASSWORD: 'Incorrect password. Please try again.',
+  EMAIL_NOT_VERIFIED: "Your email isn't verified yet. Check your inbox (and spam folder) for the confirmation link.",
+  GOOGLE_ONLY_ACCOUNT: 'This account uses Google sign-in. Please continue with Google.',
+  EMAIL_ALREADY_EXISTS: 'An account with this email already exists',
+  PASSWORD_TOO_SHORT: 'Password must be at least 8 characters long.',
+  PASSWORD_TOO_LONG: 'Password must be 72 characters or fewer.',
+  INVALID_NAME_EMAIL: 'Enter a valid name and email address.',
+  INVALID_EMAIL: 'Enter a valid email address.',
+  INVALID_CREDENTIALS: 'Enter a valid email address and password.',
+  EMAIL_SEND_FAILED: "We couldn't send the confirmation email. Please try again in a moment.",
+  SERVER_ERROR: 'Something went wrong on our side. Please try again in a moment.',
+  NETWORK_ERROR: 'Something went wrong on our side. Please try again in a moment.',
+}
+
+export class AuthRequestError extends Error {
+  readonly code: string
+
+  constructor(code: string, message: string) {
+    super(message)
+    this.name = 'AuthRequestError'
+    this.code = code
+  }
+}
+
+export function getAuthErrorMessage(error: unknown): string {
+  if (error instanceof AuthRequestError) {
+    return authErrorMessages[error.code] ?? error.message
+  }
+
+  return 'Something went wrong on our side. Please try again in a moment.'
+}
+
 async function requestAuth(path: string, options: RequestInit = {}): Promise<AuthResult> {
-  const response = await fetch(`${apiBaseUrl}/auth/${path}`, {
-    ...options,
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  })
-  const result = await response.json() as AuthResult
+  let response: Response
+  try {
+    response = await fetch(`${apiBaseUrl}/auth/${path}`, {
+      ...options,
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    })
+  } catch {
+    throw new AuthRequestError('NETWORK_ERROR', authErrorMessages.NETWORK_ERROR)
+  }
+
+  let result: AuthResult
+  try {
+    result = await response.json() as AuthResult
+  } catch {
+    throw new AuthRequestError('SERVER_ERROR', authErrorMessages.SERVER_ERROR)
+  }
 
   if (!response.ok) {
-    throw new Error(result.error || 'Authentication request failed.')
+    const code = result.code || 'SERVER_ERROR'
+    throw new AuthRequestError(
+      code,
+      authErrorMessages[code] || result.error || authErrorMessages.SERVER_ERROR,
+    )
   }
 
   return result
@@ -50,6 +100,13 @@ export function signIn(email: string, password: string, remember: boolean): Prom
   return requestAuth('login.php', {
     method: 'POST',
     body: JSON.stringify({ email, password, remember }),
+  })
+}
+
+export function resendVerificationEmail(email: string): Promise<AuthResult> {
+  return requestAuth('resend-verification.php', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
   })
 }
 
