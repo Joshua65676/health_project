@@ -33,7 +33,7 @@ const HowItWork: React.FC = () => {
           </p>
         </div>
 
-        <div className="grid w-full max-w-5xl grid-cols-1 rounded-2xl border-t border-FormBg bg-StepsBg md:grid-cols-3">
+        <div className="grid w-full max-w-5xl grid-cols-1 gap-12 bg-StepsBg md:grid-cols-3 md:gap-0 md:rounded-2xl md:border-t md:border-FormBg">
           {STEPS.map((step, index) => {
             const isLast = index === STEPS.length - 1;
 
@@ -41,7 +41,7 @@ const HowItWork: React.FC = () => {
               <motion.article
                 key={step.id}
                 {...cardMotion(index)}
-                className="relative flex h-full flex-col items-center px-5 pb-8 pt-10 text-center sm:px-8 sm:pb-10 sm:pt-12 md:px-5 lg:px-8"
+                className="relative flex h-full flex-col items-center rounded-2xl border-t border-FormBg px-5 pb-8 pt-10 text-center sm:px-8 sm:pb-10 sm:pt-12 md:rounded-none md:border-t-0 md:px-5 lg:px-8"
               >
                 <span className="absolute left-1/2 top-0 flex size-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-TextColor text-center font-Inter text-sm font-semibold text-white">
                   {step.id}

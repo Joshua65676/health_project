@@ -41,14 +41,14 @@ const Login: React.FC = () => {
   }
 
   return (
-    <section className="flex flex-col gap-8 bg-linear-to-b from-[#cfdee3] to-[#fafafa]">
+    <section className="flex min-h-screen flex-col gap-4 bg-linear-to-b from-[#cfdee3] to-[#fafafa] sm:gap-8">
       <NavBar />
-      <section className="flex items-center justify-center max-h-screen container max-w-7xl mx-auto w-full">
+      <section className="container mx-auto flex w-full flex-1 items-center justify-center px-4 py-4 sm:max-w-7xl sm:px-6 sm:py-8">
         <motion.main
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: "easeOut" }}
-          className="flex flex-col items-center justify-center px-16.5 py-8 w-119.25 rounded-2xl bg-white gap-4"
+          className="flex w-full max-w-119.25 flex-col items-center justify-center gap-4 rounded-2xl bg-white px-4 py-6 sm:px-8 sm:py-8 lg:px-16.5"
         >
           <div className="flex flex-col items-center gap-2">
             <div className="w-14.75 h-14.75 rounded-lg bg-BoxBg shadow-hard flex items-center justify-center">
@@ -57,14 +57,14 @@ const Login: React.FC = () => {
             <h2 className="font-semibold font-Inter text-[32px] leading-10 text-center tracking-normal text-black">
               Welcome Back
             </h2>
-            <p className="font-[400px] font-Inter text-[14px] leading-5 tracking-normal text-center w-77.75 text-Black">
+            <p className="w-full max-w-77.75 text-center font-[400px] font-Inter text-[14px] leading-5 tracking-normal text-Black">
               Sign in to access your personalized health insights and
               consultations.
             </p>
           </div>
           {/* Forms */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-            <div className="flex flex-col gap-1 w-86.25">
+          <form onSubmit={handleSubmit} className="flex w-full flex-col gap-2">
+            <div className="flex w-full flex-col gap-1">
               <label className="font-Inter font-[400px] text-[14px] leading-7.5 tracking-normal text-start text-Black">
                 Email Address
               </label>
@@ -76,7 +76,7 @@ const Login: React.FC = () => {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="Enter your email..."
-                  className="w-86.25 h-12 rounded-[10px] border py-3.25 pl-12 pr-5.75 border-FormBg font-Inter font-medium text-[14px] leading-7.5 tracking-normal text-black"
+                  className="h-12 w-full rounded-[10px] border border-FormBg py-3.25 pl-12 pr-5.75 font-Inter text-[14px] font-medium leading-7.5 tracking-normal text-black"
                 />
                 <img
                   src={Mail}
@@ -86,7 +86,7 @@ const Login: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex flex-col gap-1 w-86.25">
+            <div className="flex w-full flex-col gap-1">
               <label className="font-Inter font-[400px] text-[14px] leading-7.5 tracking-normal text-start text-Black">
                 Password
               </label>
@@ -103,7 +103,7 @@ const Login: React.FC = () => {
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="Enter your password"
-                  className="w-86.25 h-12 rounded-[10px] border py-3.25 pl-12 pr-12 border-FormBg font-Inter font-medium text-[14px] leading-7.5 tracking-normal text-black"
+                  className="h-12 w-full rounded-[10px] border border-FormBg py-3.25 pl-12 pr-12 font-Inter text-[14px] font-medium leading-7.5 tracking-normal text-black"
                 />
                 <button
                   type="button"
@@ -147,24 +147,24 @@ const Login: React.FC = () => {
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
               transition={{ duration: 0.16 }}
-              className="bg-TextColor cursor-pointer rounded-[10px] h-10 w-86.25 px-5.75 font-Inter font-medium text-[14px] leading-7.5 text-center text-white hover:bg-opacity-90 transition duration-300 disabled:cursor-wait disabled:opacity-60"
+              className="h-10 w-full cursor-pointer rounded-[10px] bg-TextColor px-5.75 text-center font-Inter text-[14px] font-medium leading-7.5 text-white transition duration-300 hover:bg-opacity-90 disabled:cursor-wait disabled:opacity-60"
             >
               {busy ? "Signing in..." : "Login to MediAI"}
             </motion.button>
             {feedback && (
-              <p role="alert" className="w-86.25 text-sm text-red-700">
+              <p role="alert" className="w-full text-sm text-red-700">
                 {feedback}
               </p>
             )}
           </form>
           {/* Contiune */}
           <div className="flex flex-col gap-2">
-            <div className="flex flex-row w-86.25 items-center justify-between">
-              <hr className="w-25 border border-FormBg" />
+            <div className="flex w-full items-center justify-between gap-2">
+              <hr className="w-25 flex-1 border border-FormBg" />
               <span className="font-Inter font-[400px] text-[12px] leading-7.5 text-Black">
                 Or continue with
               </span>
-              <hr className="w-25 border border-FormBg" />
+              <hr className="w-25 flex-1 border border-FormBg" />
             </div>
 
             <motion.button
@@ -173,7 +173,7 @@ const Login: React.FC = () => {
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
               transition={{ duration: 0.16 }}
-              className="w-86.25 h-12 rounded-[10px] cursor-pointer px-5.75 bg-ButtonBg text-center font-Inter font-medium text-[14px] leading-7.5 text-black"
+              className="h-12 w-full cursor-pointer rounded-[10px] bg-ButtonBg px-5.75 text-center font-Inter text-[14px] font-medium leading-7.5 text-black"
             >
               <img src={GoogleIcon} alt="" className="inline-block" />
               Sign in with Google

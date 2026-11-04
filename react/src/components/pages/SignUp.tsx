@@ -5,10 +5,10 @@ import SignUpForm from "../SignUpForm";
 
 const SignUp: React.FC = () => {
   return (
-    <section className="flex flex-col gap-8 bg-linear-to-b from-[#cfdee3] to-[#fafafa]">
+    <section className="flex min-h-screen flex-col gap-4 bg-linear-to-b from-[#cfdee3] to-[#fafafa] sm:gap-8">
       <NavBar />
-      <section className="flex items-center justify-center lg:justify-between flex-row max-h-screen container max-w-7xl mx-auto w-full">
-        <main className="md:flex flex-col items-start gap-8 -mt-20 hidden">
+      <section className="container mx-auto flex w-full flex-1 flex-col items-center justify-center gap-8 px-4 py-4 sm:px-6 md:flex-row lg:max-w-7xl lg:justify-between">
+        <main className="hidden flex-col items-start gap-8 md:flex lg:-mt-20">
           <div className="flex flex-col items-start gap-3.5">
             <div className="w-59 h-8.5 rounded-[10px] bg-LightGreen py-1 px-2.5 space-x-1.5 text-center">
               <img src={Sparkle} alt="" className="inline-block" />
