@@ -40,7 +40,13 @@ try {
         $statement->execute([$name, $email, password_hash($password, PASSWORD_DEFAULT), $tokenHash]);
     }
 
-    sendVerificationEmail($email, $name, $token);
+        try {
+        sendVerificationEmail($email, $name, $token);
+    } catch (Throwable $mailError) {
+        error_log('Verification email failed: ' . $mailError->getMessage());
+        jsonResponse(['error' => 'Your account was created, but we could not send the confirmation email. Please try again in a few minutes.'], 503);
+    }
+
     jsonResponse(['message' => 'Check your email for a confirmation link.']);
 } catch (Throwable $error) {
     error_log('Registration failed: ' . $error->getMessage());
